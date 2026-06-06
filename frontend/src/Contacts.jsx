@@ -22,7 +22,7 @@ const [user,setUser]=useState({});
 
   axios
     .get(
-      "http://localhost:8080/current-user" || "https://womensafety-r0s4.onrender.com/current-user",
+       "https://womensafety-r0s4.onrender.com/current-user",
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -37,7 +37,7 @@ const [user,setUser]=useState({});
 
 useEffect(()=>{
     axios
-    .get(`http://localhost:8080/contacts/${id}` || `https://womensafety-r0s4.onrender.com/contacts/${id}`)
+    .get( `https://womensafety-r0s4.onrender.com/contacts/${id}`)
     .then((res)=> setContacts(res.data))
     .catch((err)=> console.log(err));
 },[id]);
@@ -55,7 +55,7 @@ useEffect(() => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
         const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:8080/deletecontacts/${id}` || `https://womensafety-r0s4.onrender.com/deletecontacts/${id}`, {
+        await axios.delete( `https://womensafety-r0s4.onrender.com/deletecontacts/${id}`, {
           headers: { Authorization: ` ${token}` },
         });
         alert("Contact deleted successfully!");
@@ -71,7 +71,7 @@ useEffect(() => {
   
       try {
         const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:8080/contacts/${id}` || `https://womensafety-r0s4.onrender.com/contacts/${id}`, {
+        await axios.delete( `https://womensafety-r0s4.onrender.com/contacts/${id}`, {
           headers: { Authorization: ` ${token}` },
         });
         alert("Contact update successfully!");
