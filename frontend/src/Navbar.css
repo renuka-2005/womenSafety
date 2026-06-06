@@ -1,0 +1,173 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.navbar {
+  width: 100%;
+  padding: 18px 60px;
+  background: rgba(7, 1, 26, 0.95);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Logo */
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-text {
+  font-size: 34px;
+  font-weight: 800;
+  color: white;
+}
+
+.logo-text span {
+  color: palevioletred;
+}
+
+.logo-subtitle {
+  color: #b8b8b8;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* Nav Links */
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  list-style: none;
+}
+
+.nav-links li a {
+  text-decoration: none;
+  color: #d7d7d7;
+  font-size: 18px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.nav-links li a:hover {
+  color: palevioletred;
+}
+
+/* Buttons */
+
+.desktop-buttons {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.login-btn {
+  padding: 12px 28px;
+  width: 100px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.login-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.signup-btn {
+  padding: 12px 28px;
+  border-radius: 14px;
+  border: none;
+  width: 100px;
+  background: palevioletred;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  box-shadow: 0 0 25px rgba(219,112,147,0.4);
+  transition: 0.3s;
+}
+
+.signup-btn:hover {
+  background: rgb(233, 93, 140);
+  transform: translateY(-2px);
+}
+
+/* Hamburger */
+
+.hamburger {
+  display: none;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+}
+
+/* Mobile */
+
+.mobile-buttons {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+
+  .navbar {
+    padding: 20px 25px;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .desktop-buttons {
+    display: none;
+  }
+
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+
+    width: 100%;
+    background: #120424;
+
+    flex-direction: column;
+    align-items: flex-start;
+
+    padding: 30px;
+
+    gap: 25px;
+
+    display: none;
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
+  .mobile-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .mobile-buttons button {
+    width: 100%;
+  }
+}
