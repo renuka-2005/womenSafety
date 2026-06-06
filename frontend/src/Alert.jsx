@@ -20,7 +20,7 @@ function Alert() {
 
   axios
     .get(
-      "http://localhost:8080/current-user",
+      "http://localhost:8080/current-user" || "https://womensafety-r0s4.onrender.com/current-user",
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -35,7 +35,7 @@ function Alert() {
 
 useEffect(()=>{
     axios
-    .get(`http://localhost:8080/alerts/${id}`)
+    .get(`http://localhost:8080/alerts/${id}` || `https://womensafety-r0s4.onrender.com/alerts/${id}`)
     .then((res)=> setAlerts(res.data))
     .catch((err)=> console.log(err));
 },[id]);

@@ -16,7 +16,7 @@ const [userId, setUserId] = useState({});
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8080/updatecontacts/${id}`)
+      .get(`http://localhost:8080/updatecontacts/${id}` || `https://womensafety-r0s4.onrender.com/updatecontacts/${id}`)
       .then((res) => {
         setFormData(res.data);
 
@@ -48,7 +48,7 @@ const [userId, setUserId] = useState({});
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `http://localhost:8080/updatecontacts/${id}`,
+        `http://localhost:8080/updatecontacts/${id}` || `https://womensafety-r0s4.onrender.com/updatecontacts/${id}`,
         formData,
         {
           headers: {

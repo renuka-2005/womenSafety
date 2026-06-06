@@ -47,7 +47,7 @@ export default function Dashboard() {
 
   axios
     .get(
-      "http://localhost:8080/current-user",
+      "http://localhost:8080/current-user" || "https://womensafety-r0s4.onrender.com/current-user",
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,7 +97,7 @@ const data = await response.json();
 const locationAddress =  data.display_name;
 
     await axios.post(
-      "http://localhost:8080/sos",
+      "http://localhost:8080/sos" ||"https://womensafety-r0s4.onrender.com/sos",
       {
         latitude,
         longitude,
