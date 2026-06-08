@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./Dashboard.css";
-import { Link } from 'react-router';
+import { Link } from "react-router";
 import { jwtDecode } from "jwt-decode";
-import socket from './Socket';
+import socket from "./Socket";
 
 import {
   LayoutDashboard,
@@ -22,194 +22,146 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-  const [user,setUser]=useState({});
- const [location, setLocation] = useState(null);
- const [watchId, setWatchId] = useState(null);
-const [isTracking, setIsTracking] = useState(false);
+  const [user, setUser] = useState({});
+  const [location, setLocation] = useState(null);
+  const [watchId, setWatchId] = useState(null);
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackingId, setTrackingId] = useState(null);
 
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Socket Connected:", socket.id);
+    });
 
-useEffect(() => {
-
-  socket.on(
-    "receiveLocation",
-    (data) => {
-
-      console.log(
-        "Live Location:",
-        data
-      );
+    socket.on("receiveLocation", (data) => {
+      console.log("Live Location:", data);
 
       setLocation(data);
+    });
 
-    }
-  );
+    return () => {
+      socket.off("connect");
+      socket.off("receiveLocation");
+    };
+  }, []);
 
-  return () => {
-    socket.off(
-      "receiveLocation"
-    );
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-}, []);
+    if (token) {
+      const decoded = jwtDecode(token);
 
- useEffect(() => {
+      const expiryTime = decoded.exp * 1000;
+      const currentTime = Date.now();
 
-  const token = localStorage.getItem("token");
+      const remainingTime = expiryTime - currentTime;
 
-  if (token) {
-  const decoded = jwtDecode(token);
-
-  const expiryTime = decoded.exp * 1000;
-  const currentTime = Date.now();
-
-  const remainingTime = expiryTime - currentTime;
-
-  if (remainingTime > 0) {
-    setTimeout(() => {
-      localStorage.removeItem("token");
-      alert("Session expired. Please login again.");
-      window.location.href = "/login";
-    }, remainingTime);
-  }
-}
-
-  axios
-    .get(
-       "https://womensafety-r0s4.onrender.com/current-user",
-      // "http://localhost:8080/current-user",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      if (remainingTime > 0) {
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          alert("Session expired. Please login again.");
+          window.location.href = "/login";
+        }, remainingTime);
       }
-    )
-    .then((res) => setUser(res.data))
-    // console.log(user)
-    .catch((err) => console.log(err));
+    }
 
-}, []);
+    axios
+      .get(
+        "https://womensafety-r0s4.onrender.com/current-user",
+        // "http://localhost:8080/current-user",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      .then((res) => setUser(res.data))
+      // console.log(user)
+      .catch((err) => console.log(err));
+  }, []);
 
+  const handleSOS = () => {
+    if (isTracking) {
+      alert("SOS Tracking already active");
+      return;
+    }
 
-const handleLiveLocation = () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
+    const id = navigator.geolocation.watchPosition(async (position) => {
       const latitude = position.coords.latitude;
+
       const longitude = position.coords.longitude;
 
-      const mapUrl = location
-  ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
-  : "";
-      window.open(mapUrl, "_blank");
-    },
-    (error) => {
-      console.log(error);
-      alert("Unable to fetch location");
-    }
-  );
-};
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+      );
 
-const handleSOS = () => {
+      const data = await response.json();
 
-  if (isTracking) {
-    alert("SOS Tracking already active");
-    return;
-  }
+      const locationAddress = data.display_name;
 
-  const id = navigator.geolocation.watchPosition(
+      setLocation({
+        latitude,
+        longitude,
+        locationAddress,
+      });
 
-    async (position) => {
-
-      try {
-
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-        );
-
-        const data = await response.json();
-
-        const locationAddress =
-          data.display_name || "Address not found";
-
-        await axios.post(
+      if (!trackingId) {
+        const sosResponse = await axios.post(
           "https://womensafety-r0s4.onrender.com/sos",
-          // "http://localhost:8080/sos",
           {
+            trackingId,
             latitude,
             longitude,
-            locationAddress
+            locationAddress,
           },
           {
             headers: {
-              authorization: localStorage.getItem("token")
-            }
-          }
+              authorization: localStorage.getItem("token"),
+            },
+          },
         );
 
-        setLocation({
+        setTrackingId(sosResponse.data.trackingId);
+        socket.emit("locationUpdate", {
+          trackingId,
           latitude,
           longitude,
-          locationAddress
+          locationAddress,
         });
-
-      } catch (error) {
-        console.log(error);
+      } else {
+        await axios.post(
+          "https://womensafety-r0s4.onrender.com/update-location",
+          {
+            trackingId,
+            latitude,
+            longitude,
+          },
+        );
       }
+    });
+  };
 
-    },
+  const stopSOS = () => {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
 
-    (error) => {
-      console.log(error);
-      alert("Location access denied");
-    },
+      setWatchId(null);
+      setIsTracking(false);
 
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 10000
+      alert("SOS Deactivated");
     }
-  );
-
-  setWatchId(id);
-  setIsTracking(true);
-
-  alert("SOS Activated");
-};
-
-const stopSOS = () => {
-
-  if (watchId !== null) {
-
-    navigator.geolocation.clearWatch(watchId);
-
-    setWatchId(null);
-    setIsTracking(false);
-
-    alert("SOS Deactivated");
-  }
-
-};
+  };
   return (
     <div className="dashboard">
-
       {/* Sidebar */}
 
       <div className="sidebar">
-
         <div className="logo-section">
           <Shield size={40} className="logo-icon" />
           <h2>Women Safety</h2>
         </div>
 
         <div className="menu">
-
           <div className="menu-item active">
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
@@ -222,7 +174,12 @@ const stopSOS = () => {
 
           <div className="menu-item">
             <Users size={20} />
-           <Link to={`/contacts/${user._id}` } style={{textDecorationLine:"none"}}><span>Contacts</span></Link>
+            <Link
+              to={`/contacts/${user._id}`}
+              style={{ textDecorationLine: "none" }}
+            >
+              <span>Contacts</span>
+            </Link>
           </div>
 
           <div className="menu-item">
@@ -232,7 +189,13 @@ const stopSOS = () => {
 
           <div className="menu-item">
             <Bell size={20} />
-             <Link to={`/alerts/${user._id}`} style={{textDecorationLine:"none"}}> <span>Alerts</span></Link>
+            <Link
+              to={`/alerts/${user._id}`}
+              style={{ textDecorationLine: "none" }}
+            >
+              {" "}
+              <span>Alerts</span>
+            </Link>
           </div>
 
           <div className="menu-item">
@@ -259,11 +222,9 @@ const stopSOS = () => {
             <LogOut size={20} />
             <span>Logout</span>
           </div>
-
         </div>
 
         <div className="help-card">
-
           <img
             src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
             alt="help"
@@ -274,25 +235,21 @@ const stopSOS = () => {
           <p>We are here to keep you safe.</p>
 
           <button>Need Help?</button>
-
         </div>
       </div>
 
       {/* Main */}
 
       <div className="main-content">
-
         {/* Header */}
 
         <div className="topbar">
-
           <div>
             <h1>Welcome back, {user.username}!</h1>
             <p>Stay alert, stay safe. We're here for you.</p>
           </div>
 
           <div className="profile">
-
             <Bell size={22} />
 
             <img
@@ -301,14 +258,12 @@ const stopSOS = () => {
             />
 
             <span>Hi, {user.username}</span>
-
           </div>
         </div>
 
         {/* Stats */}
 
         <div className="stats-grid">
-
           <div className="stat-card">
             <div className="icon purple">
               <Users />
@@ -316,8 +271,13 @@ const stopSOS = () => {
 
             <div>
               <p>Total Contacts</p>
-              
-              <Link to={`/contacts/${user._id}`} style={{textDecorationLine:"none"}}><span>View all</span></Link>
+
+              <Link
+                to={`/contacts/${user._id}`}
+                style={{ textDecorationLine: "none" }}
+              >
+                <span>View all</span>
+              </Link>
             </div>
           </div>
 
@@ -328,7 +288,13 @@ const stopSOS = () => {
 
             <div>
               <p>SOS Alerts</p>
-             <Link to={`/alerts/${user._id}`} style={{textDecorationLine:"none"}}> <span>View history</span></Link>
+              <Link
+                to={`/alerts/${user._id}`}
+                style={{ textDecorationLine: "none" }}
+              >
+                {" "}
+                <span>View history</span>
+              </Link>
             </div>
           </div>
 
@@ -337,7 +303,7 @@ const stopSOS = () => {
               <Shield />
             </div> */}
 
-            {/* <div>
+          {/* <div>
               <p>Safe Check-ins</p>
               <h2>12</h2>
               <span>This month</span>
@@ -360,41 +326,39 @@ const stopSOS = () => {
         {/* Middle Grid */}
 
         <div className="middle-grid">
-
           {/* SOS */}
 
           <div className="card sos-card">
-
             <h2>Quick SOS</h2>
 
             <p>Press the button in emergency</p>
 
             <div className="sos-circle">
-             <button
-  onClick={isTracking ? stopSOS : handleSOS}
->
-  {isTracking ? "STOP SOS" : "SOS"}
-</button>
+              <button onClick={isTracking ? stopSOS : handleSOS}>
+                {isTracking ? "STOP SOS" : "SOS"}
+              </button>
             </div>
 
             <div className="share-box">
               <Shield />
               <p>Your location will be shared with your contacts.</p>
             </div>
-
           </div>
 
           {/* Contacts */}
 
           <div className="card contacts-card">
-
             <div className="card-header">
               <h2>Emergency Contacts</h2>
-              <Link to={`/contacts/${user._id}`} style={{textDecorationLine:"none"}}><span>View all</span></Link>
+              <Link
+                to={`/contacts/${user._id}`}
+                style={{ textDecorationLine: "none" }}
+              >
+                <span>View all</span>
+              </Link>
             </div>
 
             <div className="contact">
-
               <img
                 src="https://randomuser.me/api/portraits/women/65.jpg"
                 alt=""
@@ -409,11 +373,9 @@ const stopSOS = () => {
                 <Phone />
                 <MessageCircle />
               </div>
-
             </div>
 
             <div className="contact">
-
               <img
                 src="https://randomuser.me/api/portraits/women/45.jpg"
                 alt=""
@@ -428,11 +390,9 @@ const stopSOS = () => {
                 <Phone />
                 <MessageCircle />
               </div>
-
             </div>
 
             <div className="contact">
-
               <img
                 src="https://randomuser.me/api/portraits/men/45.jpg"
                 alt=""
@@ -447,22 +407,16 @@ const stopSOS = () => {
                 <Phone />
                 <MessageCircle />
               </div>
-
             </div>
-
           </div>
 
           {/* Map */}
 
-
-              
-              
           <div className="card map-card">
-
             <div className="card-header">
               <h2>Live Location</h2>
-             
-<span onClick={handleLiveLocation}>View full map</span>
+
+              <span onClick={handleLiveLocation}>View full map</span>
             </div>
 
             <img
@@ -472,30 +426,21 @@ const stopSOS = () => {
             />
 
             <div className="location-status">
-
               <div className="green-dot"></div>
 
-             <span>
- {isTracking
-   ? "Location is being shared"
-   : "Location sharing stopped"}
-</span>
-
+              <span>
+                {isTracking
+                  ? "Location is being shared"
+                  : "Location sharing stopped"}
+              </span>
             </div>
 
-          <p>
- {location
-   ? location.locationAddress
-   : "Location not available"}
-</p>
-
+            <p>
+              {location ? location.locationAddress : "Location not available"}
+            </p>
           </div>
-
         </div>
-
       </div>
     </div>
   );
 }
-
-

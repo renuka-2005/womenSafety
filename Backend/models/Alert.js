@@ -17,6 +17,10 @@ const alertSchema=new mongoose.Schema({
   locationAddress:{
     type:String
   },
+  trackingId:{
+    type: String,
+    unique: true
+  },
   message: {
     type: String,
     default: "Emergency! I need help."

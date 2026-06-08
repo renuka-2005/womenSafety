@@ -49,6 +49,15 @@ io.on("connection", (socket) => {
     socket.id
   );
 
+ socket.on("locationUpdate", (data) => {
+
+  io.emit(
+    data.trackingId,
+    data
+  );
+
+});
+
   socket.on("disconnect", () => {
 
     console.log(
@@ -58,7 +67,6 @@ io.on("connection", (socket) => {
   });
 
 });
-
 async function main() {
   await mongoose.connect(dbUrl);
 }
@@ -361,7 +369,7 @@ app.post("/sos", async (req, res) => {
   try {
     const { latitude, longitude , locationAddress} = req.body;
     const token = req.headers.authorization;
-
+const trackingId = uuidv4();
     console.log("TOKEN:", token);
 
     if (!token) {
@@ -381,28 +389,28 @@ app.post("/sos", async (req, res) => {
       `https://maps.google.com/?q=${latitude},${longitude}`;
 
     const contacts = await Contact.find();
-
-    // for (const contact of contacts) {
-    //   await sendSOSMail(contact.email, locationLink);
-    // }
+    const trackingLink =
+`https://womensafety-1-01fw.onrender.com//${trackingId}`;
     for (const contact of contacts) {
 
   if (contact.phone) {
 
     await sendSOSSMS(
       contact.phone,
-      locationLink
+     trackingLink
     );
 
   }
 
 }
-
+console.log("Latitude:", latitude);
+console.log("Longitude:", longitude);
     const alert=new Alert({
       userId:decoded.userId,
       latitude,
       longitude,
-      locationAddress
+      locationAddress,
+      trackingId
     });
     await alert.save();
     io.emit("receiveLocation", {
@@ -413,9 +421,11 @@ app.post("/sos", async (req, res) => {
   timestamp: new Date()
 });
     res.json({
-      success: true,
-      message: "SOS alerts sent",
-    });
+  success: true,
+  trackingId,
+  trackingLink:
+    `https://womensafety-1-01fw.onrender.com/track/${trackingId}`
+});
     
   } catch (err) {
     console.log(err);
@@ -424,6 +434,47 @@ app.post("/sos", async (req, res) => {
       message: "Failed to send alerts",
     });
   }
+});
+
+
+app.post(
+ "/update-location",
+ async (req,res) => {
+
+ const {
+   trackingId,
+   latitude,
+   longitude
+ } = req.body;
+
+ await Location.findOneAndUpdate(
+
+   { trackingId },
+
+   {
+     trackingId,
+    latitude,
+    longitude
+   },
+    {
+    upsert: true,
+    new: true
+  }
+
+ );
+
+ io.emit(
+   trackingId,
+   {
+     latitude,
+     longitude
+   }
+ );
+
+ res.json({
+   success:true
+ });
+
 });
 
 app.get("/alerts/:id",async(req,res)=>{
