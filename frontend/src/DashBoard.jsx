@@ -3,6 +3,7 @@ import axios from "axios";
 import "./Dashboard.css";
 import { Link } from 'react-router';
 import { jwtDecode } from "jwt-decode";
+import socket from './Socket';
 
 import {
   LayoutDashboard,
@@ -23,6 +24,33 @@ import {
 export default function Dashboard() {
   const [user,setUser]=useState({});
  const [location, setLocation] = useState(null);
+ const [watchId, setWatchId] = useState(null);
+const [isTracking, setIsTracking] = useState(false);
+
+
+useEffect(() => {
+
+  socket.on(
+    "receiveLocation",
+    (data) => {
+
+      console.log(
+        "Live Location:",
+        data
+      );
+
+      setLocation(data);
+
+    }
+  );
+
+  return () => {
+    socket.off(
+      "receiveLocation"
+    );
+  };
+
+}, []);
 
  useEffect(() => {
 
@@ -48,6 +76,7 @@ export default function Dashboard() {
   axios
     .get(
        "https://womensafety-r0s4.onrender.com/current-user",
+      // "http://localhost:8080/current-user",
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -72,10 +101,10 @@ const handleLiveLocation = () => {
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
 
-      const googleMapsUrl =
-        `https://www.google.com/maps?q=${latitude},${longitude}`;
-
-      window.open(googleMapsUrl, "_blank");
+      const mapUrl = location
+  ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
+  : "";
+      window.open(mapUrl, "_blank");
     },
     (error) => {
       console.log(error);
@@ -84,33 +113,88 @@ const handleLiveLocation = () => {
   );
 };
 
-const handleSOS = async () => {
-  navigator.geolocation.watchPosition(async (position) => {
+const handleSOS = () => {
 
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    
-const response = await fetch(
-  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-);
-const data = await response.json();
-const locationAddress =  data.display_name;
+  if (isTracking) {
+    alert("SOS Tracking already active");
+    return;
+  }
 
-    await axios.post(
-      "https://womensafety-r0s4.onrender.com/sos",
-      {
-        latitude,
-        longitude,
-        locationAddress
-      },
-      {
-        headers: {
-          authorization: localStorage.getItem("token")
-        }
+  const id = navigator.geolocation.watchPosition(
+
+    async (position) => {
+
+      try {
+
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+        );
+
+        const data = await response.json();
+
+        const locationAddress =
+          data.display_name || "Address not found";
+
+        await axios.post(
+          "https://womensafety-r0s4.onrender.com/sos",
+          // "http://localhost:8080/sos",
+          {
+            latitude,
+            longitude,
+            locationAddress
+          },
+          {
+            headers: {
+              authorization: localStorage.getItem("token")
+            }
+          }
+        );
+
+        setLocation({
+          latitude,
+          longitude,
+          locationAddress
+        });
+
+      } catch (error) {
+        console.log(error);
       }
-    );
 
-  });
+    },
+
+    (error) => {
+      console.log(error);
+      alert("Location access denied");
+    },
+
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    }
+  );
+
+  setWatchId(id);
+  setIsTracking(true);
+
+  alert("SOS Activated");
+};
+
+const stopSOS = () => {
+
+  if (watchId !== null) {
+
+    navigator.geolocation.clearWatch(watchId);
+
+    setWatchId(null);
+    setIsTracking(false);
+
+    alert("SOS Deactivated");
+  }
+
 };
   return (
     <div className="dashboard">
@@ -286,7 +370,11 @@ const locationAddress =  data.display_name;
             <p>Press the button in emergency</p>
 
             <div className="sos-circle">
-              <button onClick={handleSOS}>SOS</button>
+             <button
+  onClick={isTracking ? stopSOS : handleSOS}
+>
+  {isTracking ? "STOP SOS" : "SOS"}
+</button>
             </div>
 
             <div className="share-box">
@@ -302,7 +390,7 @@ const locationAddress =  data.display_name;
 
             <div className="card-header">
               <h2>Emergency Contacts</h2>
-              <span>View all</span>
+              <Link to={`/contacts/${user._id}`} style={{textDecorationLine:"none"}}><span>View all</span></Link>
             </div>
 
             <div className="contact">
@@ -387,11 +475,19 @@ const locationAddress =  data.display_name;
 
               <div className="green-dot"></div>
 
-              <span>Location is being shared</span>
+             <span>
+ {isTracking
+   ? "Location is being shared"
+   : "Location sharing stopped"}
+</span>
 
             </div>
 
-            <p>MG Road, Bengaluru, Karnataka</p>
+          <p>
+ {location
+   ? location.locationAddress
+   : "Location not available"}
+</p>
 
           </div>
 

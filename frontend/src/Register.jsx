@@ -23,7 +23,8 @@ function Register() {
       setLoading(true);
 
       const res = await axios.post(
-         "https://womensafety-r0s4.onrender.com/register",
+        //  "https://womensafety-r0s4.onrender.com/register",
+        "http://localhost:8080/register",
         {
           username,
           email,

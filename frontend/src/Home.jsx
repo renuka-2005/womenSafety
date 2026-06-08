@@ -86,7 +86,7 @@ function Home() {
 
           {/* IMAGE */}
           <img
-            src="https://dataxs.in/wp-content/uploads/2024/11/fashion-girl-walking-evening-city-1-2-scaled.jpg"
+            src="https://static.vecteezy.com/system/resources/thumbnails/036/091/653/small/ai-generated-portrait-of-beautiful-young-woman-using-smartphone-in-street-at-night-generative-ai-photo.jpg"
             alt="Women Safety"
             className="hero-image"
           />

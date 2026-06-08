@@ -3,6 +3,7 @@ require("dotenv").config();
 const express=require("express");
 const app = express();
 const http = require("http");
+const { Server } = require("socket.io");
 const cors=require("cors");
 const mongoose=require("mongoose");
 const bodyParser = require("body-parser");
@@ -17,21 +18,11 @@ const User=require("./models/User");
 const Alert=require("./models/Alert");
 const Contact=require("./models/Contact");
 const Location=require("./models/Location");
-const twilio = require("twilio");
 const nodemailer = require("nodemailer");
-
+const twilio = require("twilio");
 const { v4: uuidv4 } = require("uuid");
 const auth=require("./middleware/auth");
 
-// const { Server } = require("socket.io");
-
-// const server = http.createServer(app);
-
-// const io = new Server(server, {
-//   cors: {
-//     origin: "*",
-//   },
-// });
 
 const dbUrl = process.env.MONGODB_URI;
 
@@ -43,6 +34,30 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, "/public")));
 
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
+
+io.on("connection", (socket) => {
+
+  console.log(
+    "User Connected:",
+    socket.id
+  );
+
+  socket.on("disconnect", () => {
+
+    console.log(
+      "User Disconnected"
+    );
+
+  });
+
+});
 
 async function main() {
   await mongoose.connect(dbUrl);
@@ -86,6 +101,10 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 async function sendSOSMail(email, locationLink) {
   await transporter.sendMail({
@@ -103,7 +122,41 @@ ${locationLink}
   });
 }
 
+async function sendSOSSMS(phone, locationLink) {
 
+  try {
+
+    await twilioClient.messages.create({
+
+      body: `
+🚨 SOS ALERT 🚨
+
+Emergency assistance required.
+
+Location:
+${locationLink}
+      `,
+
+      from: process.env.TWILIO_PHONE_NUMBER,
+
+      to: phone
+
+    });
+
+    console.log(
+      "SMS Sent Successfully"
+    );
+
+  } catch (error) {
+
+    console.log(
+      "SMS Error:",
+      error.message
+    );
+
+  }
+
+}
 
 app.post('/register', async (req, res) => {
  try {
@@ -329,9 +382,21 @@ app.post("/sos", async (req, res) => {
 
     const contacts = await Contact.find();
 
+    // for (const contact of contacts) {
+    //   await sendSOSMail(contact.email, locationLink);
+    // }
     for (const contact of contacts) {
-      await sendSOSMail(contact.email, locationLink);
-    }
+
+  if (contact.phone) {
+
+    await sendSOSSMS(
+      contact.phone,
+      locationLink
+    );
+
+  }
+
+}
 
     const alert=new Alert({
       userId:decoded.userId,
@@ -340,6 +405,13 @@ app.post("/sos", async (req, res) => {
       locationAddress
     });
     await alert.save();
+    io.emit("receiveLocation", {
+  userId: decoded.userId,
+  latitude,
+  longitude,
+  locationAddress,
+  timestamp: new Date()
+});
     res.json({
       success: true,
       message: "SOS alerts sent",
@@ -441,35 +513,8 @@ app.get("/location-history",async(req,res)=>{
 });
 
 
-// const users = {};
 
-// io.on("connection", (socket) => {
 
-//   console.log("User Connected");
-
-//   socket.on("send-location", (data) => {
-
-//     users[socket.id] = data;
-
-//     io.emit("receive-location", {
-//       id: socket.id,
-//       ...data,
-//     });
-
-//   });
-
-//   socket.on("disconnect", () => {
-
-//     delete users[socket.id];
-
-//     io.emit("user-disconnected", socket.id);
-
-//     console.log("User Disconnected");
-
-//   });
-
-// });
-
-app.listen(8080, () => {
+server.listen(8080, () => {
   console.log("Server running on port 8080");
 });

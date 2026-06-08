@@ -40,6 +40,7 @@ function AddContact() {
 
       const res = await axios.post(
         "https://womensafety-r0s4.onrender.com/contacts",
+        // "http://localhost:8080/contacts",
         formData,
         {
           headers: {

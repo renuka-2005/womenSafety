@@ -22,6 +22,7 @@ function Login() {
 
       const res = await axios.post(
         "https://womensafety-r0s4.onrender.com/login",
+        // "http://localhost:8080/login",
         {
           username,
           password,
@@ -60,7 +61,7 @@ function Login() {
         <div className="overlay"></div>
 
         <img
-          src="https://dataxs.in/wp-content/uploads/2024/11/fashion-girl-walking-evening-city-1-2-scaled.jpg"
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0bjRHi5FtYH7e858ObURVmLeRBed3t7_3Ig&s"
           alt="Women Safety"
         />
 
