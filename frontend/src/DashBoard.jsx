@@ -26,7 +26,8 @@ export default function Dashboard() {
   const [location, setLocation] = useState(null);
   const [watchId, setWatchId] = useState(null);
   const [isTracking, setIsTracking] = useState(false);
-  const [trackingId, setTrackingId] = useState(null);
+  const [trackingId, setTrackingId] =
+useState(null);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -80,65 +81,95 @@ export default function Dashboard() {
       .catch((err) => console.log(err));
   }, []);
 
+  const handleLiveLocation = () => {
+
+  if (!location) {
+    alert("Location not available");
+    return;
+  }
+
+  const mapUrl =
+    `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+
+  window.open(mapUrl, "_blank");
+};
+
   const handleSOS = () => {
     if (isTracking) {
       alert("SOS Tracking already active");
       return;
     }
 
-    const id = navigator.geolocation.watchPosition(async (position) => {
-      const latitude = position.coords.latitude;
+   const id = navigator.geolocation.watchPosition(
 
-      const longitude = position.coords.longitude;
+  async (position) => {
 
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-      );
+    const latitude =
+      position.coords.latitude;
 
-      const data = await response.json();
+    const longitude =
+      position.coords.longitude;
 
-      const locationAddress = data.display_name;
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+    );
 
-      setLocation({
-        latitude,
-        longitude,
-        locationAddress,
-      });
+    const data =
+      await response.json();
 
-      if (!trackingId) {
-        const sosResponse = await axios.post(
+    const locationAddress =
+      data.display_name;
+
+    setLocation({
+      latitude,
+      longitude,
+      locationAddress
+    });
+
+    if (!trackingId) {
+
+      const sosResponse =
+        await axios.post(
           "https://womensafety-r0s4.onrender.com/sos",
           {
             trackingId,
             latitude,
             longitude,
-            locationAddress,
+            locationAddress
           },
           {
             headers: {
-              authorization: localStorage.getItem("token"),
-            },
-          },
+              authorization:
+                localStorage.getItem("token")
+            }
+          }
         );
 
-        setTrackingId(sosResponse.data.trackingId);
-        socket.emit("locationUpdate", {
+      setTrackingId(
+        sosResponse.data.trackingId
+      );
+      socket.emit("locationUpdate", {
+  trackingId,
+  latitude,
+  longitude,
+  locationAddress
+});
+
+    } else {
+
+      await axios.post(
+        "https://womensafety-r0s4.onrender.com/update-location",
+        {
           trackingId,
           latitude,
-          longitude,
-          locationAddress,
-        });
-      } else {
-        await axios.post(
-          "https://womensafety-r0s4.onrender.com/update-location",
-          {
-            trackingId,
-            latitude,
-            longitude,
-          },
-        );
-      }
-    });
+          longitude
+        }
+      );
+
+    }
+
+  }
+);
   };
 
   const stopSOS = () => {
@@ -184,7 +215,7 @@ export default function Dashboard() {
 
           <div className="menu-item">
             <MapPin size={20} />
-            <span >Live Tracking</span>
+            <span onClick={handleLiveLocation}>Live Tracking</span>
           </div>
 
           <div className="menu-item">
@@ -315,7 +346,7 @@ export default function Dashboard() {
               <MapPin />
             </div>
 
-            <div >
+            <div onClick={handleLiveLocation}>
               <p>Live Tracking</p>
               {/* <h2 className="orange-text">Active</h2> */}
               <span>View on map</span>
@@ -416,7 +447,7 @@ export default function Dashboard() {
             <div className="card-header">
               <h2>Live Location</h2>
 
-              <span >View full map</span>
+              <span onClick={handleLiveLocation}>View full map</span>
             </div>
 
             <img
