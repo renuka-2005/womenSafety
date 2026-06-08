@@ -390,7 +390,7 @@ const trackingId = uuidv4();
 
     const contacts = await Contact.find();
     const trackingLink =
-`https://womensafety-1-01fw.onrender.com//${trackingId}`;
+`https://womensafety-1-01fw.onrender.com/track/${trackingId}`;
     for (const contact of contacts) {
 
   if (contact.phone) {
