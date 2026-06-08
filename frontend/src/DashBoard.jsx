@@ -184,7 +184,7 @@ export default function Dashboard() {
 
           <div className="menu-item">
             <MapPin size={20} />
-            <span onClick={handleLiveLocation}>Live Tracking</span>
+            <span >Live Tracking</span>
           </div>
 
           <div className="menu-item">
@@ -315,7 +315,7 @@ export default function Dashboard() {
               <MapPin />
             </div>
 
-            <div onClick={handleLiveLocation}>
+            <div >
               <p>Live Tracking</p>
               {/* <h2 className="orange-text">Active</h2> */}
               <span>View on map</span>
@@ -416,7 +416,7 @@ export default function Dashboard() {
             <div className="card-header">
               <h2>Live Location</h2>
 
-              <span onClick={handleLiveLocation}>View full map</span>
+              <span >View full map</span>
             </div>
 
             <img
