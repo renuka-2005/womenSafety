@@ -1,8 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap
+} from "react-leaflet";
 import socket from "./Socket";
 import "leaflet/dist/leaflet.css";
+
+function ChangeView({ center }) {
+
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, 16);
+  }, [center, map]);
+
+  return null;
+}
 
 function TrackLocation() {
 
@@ -17,11 +34,9 @@ function TrackLocation() {
 
     socket.on(trackingId, (data) => {
 
-      console.log(
-        "Live Update:",
-        data
-      );
-
+      console.log("Live Update:", data);
+      console.log("Latitude:", data.latitude);
+console.log("Longitude:", data.longitude);
       setLocation({
         latitude: data.latitude,
         longitude: data.longitude
@@ -56,6 +71,13 @@ function TrackLocation() {
         }}
       >
 
+        <ChangeView
+          center={[
+            location.latitude,
+            location.longitude
+          ]}
+        />
+
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
@@ -76,7 +98,6 @@ function TrackLocation() {
     </div>
 
   );
-
 }
 
 export default TrackLocation;
