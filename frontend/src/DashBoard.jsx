@@ -154,7 +154,8 @@ useState(null);
   longitude,
   locationAddress
 });
-
+      
+setIsTracking(true);
     } else {
 
       await axios.post(
