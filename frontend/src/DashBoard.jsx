@@ -26,8 +26,7 @@ export default function Dashboard() {
   const [location, setLocation] = useState(null);
   const [watchId, setWatchId] = useState(null);
   const [isTracking, setIsTracking] = useState(false);
-  const [trackingId, setTrackingId] =
-useState(null);
+  const [trackingId, setTrackingId] = useState(null);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -82,17 +81,15 @@ useState(null);
   }, []);
 
   const handleLiveLocation = () => {
+    if (!location) {
+      alert("Location not available");
+      return;
+    }
 
-  if (!location) {
-    alert("Location not available");
-    return;
-  }
+    const mapUrl = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
 
-  const mapUrl =
-    `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-
-  window.open(mapUrl, "_blank");
-};
+    window.open(mapUrl, "_blank");
+  };
 
   const handleSOS = () => {
     if (isTracking) {
@@ -100,77 +97,71 @@ useState(null);
       return;
     }
 
-   const id = navigator.geolocation.watchPosition(
+    const id = navigator.geolocation.watchPosition(async (position) => {
+      const latitude = position.coords.latitude;
 
-  async (position) => {
+      const longitude = position.coords.longitude;
 
-    const latitude =
-      position.coords.latitude;
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+      );
 
-    const longitude =
-      position.coords.longitude;
+      const data = await response.json();
 
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-    );
+      const locationAddress = data.display_name;
 
-    const data =
-      await response.json();
+      setLocation({
+        latitude,
+        longitude,
+        locationAddress,
+      });
 
-    const locationAddress =
-      data.display_name;
-
-    setLocation({
-      latitude,
-      longitude,
-      locationAddress
-    });
-
-    if (!trackingId) {
-
-      const sosResponse =
-        await axios.post(
+      if (!trackingId) {
+        const sosResponse = await axios.post(
           "https://womensafety-r0s4.onrender.com/sos",
           {
             trackingId,
             latitude,
             longitude,
-            locationAddress
+            locationAddress,
           },
           {
             headers: {
-              authorization:
-                localStorage.getItem("token")
-            }
-          }
+              authorization: localStorage.getItem("token"),
+            },
+          },
         );
 
-      setTrackingId(
-        sosResponse.data.trackingId
-      );
-      socket.emit("locationUpdate", {
-  trackingId,
-  latitude,
-  longitude,
-  locationAddress
-});
-      
-setIsTracking(true);
-    } else {
+        const newTrackingId = sosResponse.data.trackingId;
 
-      await axios.post(
-        "https://womensafety-r0s4.onrender.com/update-location",
-        {
+        setTrackingId(newTrackingId);
+
+        socket.emit("locationUpdate", {
+          trackingId: newTrackingId,
+          latitude,
+          longitude,
+          locationAddress,
+        });
+
+        setIsTracking(true);
+      } else {
+        await axios.post(
+          "https://womensafety-r0s4.onrender.com/update-location",
+          {
+            trackingId,
+            latitude,
+            longitude,
+          },
+        );
+        socket.emit("locationUpdate", {
           trackingId,
           latitude,
-          longitude
-        }
-      );
-
-    }
-
-  }
-);
+          longitude,
+          locationAddress,
+        });
+      }
+    });
+    setWatchId(id);
   };
 
   const stopSOS = () => {

@@ -32,17 +32,16 @@ function TrackLocation() {
 
   useEffect(() => {
 
-    socket.on(trackingId, (data) => {
+   socket.on(trackingId, (data) => {
 
-      console.log("Live Update:", data);
-      console.log("Latitude:", data.latitude);
-console.log("Longitude:", data.longitude);
-      setLocation({
-        latitude: data.latitude,
-        longitude: data.longitude
-      });
+  console.log("RECEIVED DATA:", data);
 
-    });
+  setLocation({
+    latitude: data.latitude,
+    longitude: data.longitude
+  });
+
+});
 
     return () => {
       socket.off(trackingId);
