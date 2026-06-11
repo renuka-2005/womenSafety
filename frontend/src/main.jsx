@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "maplibre-gl/dist/maplibre-gl.css";
 import Login from "./Login.jsx";
 import Register from "./Register.jsx";
 import DashBoard from "./DashBoard.jsx";

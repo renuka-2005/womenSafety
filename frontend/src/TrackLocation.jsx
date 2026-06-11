@@ -34,6 +34,10 @@ function TrackLocation() {
 
   return (
     <Map
+    style={{
+    width: "100%",
+    height: "100vh"
+  }}
      key={`${location.latitude}-${location.longitude}`}
       longitude={location.longitude}
       latitude={location.latitude}
