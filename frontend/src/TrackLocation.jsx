@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import socket from "./Socket";
-
+import "maplibre-gl/dist/maplibre-gl.css";
 import Map, { Marker } from "react-map-gl/maplibre";
 
 function TrackLocation() {
@@ -34,10 +34,7 @@ function TrackLocation() {
 
   return (
     <Map
-    style={{
-    width: "100%",
-    height: "100vh"
-  }}
+   
      key={`${location.latitude}-${location.longitude}`}
       longitude={location.longitude}
       latitude={location.latitude}
@@ -46,7 +43,7 @@ function TrackLocation() {
         width: "100%",
         height: "100vh"
       }}
-      mapStyle="https://demotiles.maplibre.org/style.json"
+      mapStyle="https://tiles.openfreemap.org/styles/liberty"
     >
 
       <Marker
