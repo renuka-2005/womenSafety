@@ -132,12 +132,12 @@ export default function Dashboard() {
           },
         );
 
-        const newTrackingId = sosResponse.data.trackingId;
+       
 
-        setTrackingId(newTrackingId);
+        setTrackingId(trackingId);
 
         socket.emit("locationUpdate", {
-          trackingId: newTrackingId,
+          trackingId,
           latitude,
           longitude,
           locationAddress,

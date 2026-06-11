@@ -1,25 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMap
-} from "react-leaflet";
 import socket from "./Socket";
-import "leaflet/dist/leaflet.css";
 
-function ChangeView({ center }) {
-
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, 16);
-  }, [center, map]);
-
-  return null;
-}
+import Map, { Marker } from "react-map-gl/maplibre";
 
 function TrackLocation() {
 
@@ -32,16 +15,16 @@ function TrackLocation() {
 
   useEffect(() => {
 
-   socket.on(trackingId, (data) => {
+    socket.on(trackingId, (data) => {
 
-  console.log("RECEIVED DATA:", data);
+      console.log("Live Update:", data);
 
-  setLocation({
-    latitude: data.latitude,
-    longitude: data.longitude
-  });
+      setLocation({
+        latitude: Number(data.latitude),
+        longitude: Number(data.longitude)
+      });
 
-});
+    });
 
     return () => {
       socket.off(trackingId);
@@ -50,52 +33,24 @@ function TrackLocation() {
   }, [trackingId]);
 
   return (
-
-    <div
+    <Map
+     key={`${location.latitude}-${location.longitude}`}
+      longitude={location.longitude}
+      latitude={location.latitude}
+      zoom={16}
       style={{
-        height: "100vh",
-        width: "100%"
+        width: "100%",
+        height: "100vh"
       }}
+      mapStyle="https://demotiles.maplibre.org/style.json"
     >
 
-      <MapContainer
-        center={[
-          location.latitude,
-          location.longitude
-        ]}
-        zoom={16}
-        style={{
-          height: "100%",
-          width: "100%"
-        }}
-      >
+      <Marker
+        longitude={location.longitude}
+        latitude={location.latitude}
+      />
 
-        <ChangeView
-          center={[
-            location.latitude,
-            location.longitude
-          ]}
-        />
-
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        <Marker
-          position={[
-            location.latitude,
-            location.longitude
-          ]}
-        >
-          <Popup>
-            Live Location
-          </Popup>
-        </Marker>
-
-      </MapContainer>
-
-    </div>
-
+    </Map>
   );
 }
 
